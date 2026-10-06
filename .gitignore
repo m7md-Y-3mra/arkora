@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Locally compiled PHP extension (dev-environment workaround, not portable)
+/.php-ext
