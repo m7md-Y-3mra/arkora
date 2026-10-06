@@ -24,6 +24,10 @@ class PropertySearchController extends Controller
             'bedrooms', 'bathrooms', 'amenities', 'sort',
         ]);
 
+        if (! empty($filters['amenities']) && is_string($filters['amenities'])) {
+            $filters['amenities'] = array_map('intval', explode(',', $filters['amenities']));
+        }
+
         return Inertia::render('Public/Search', [
             'properties' => $this->properties->paginatePublished(array_filter($filters), 12),
             'filters' => $filters,

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
     Select,
     SelectContent,
@@ -40,6 +41,7 @@ const schema = z.object({
     address_line: z.string().optional(),
     latitude: z.string().optional(),
     longitude: z.string().optional(),
+    is_featured: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -99,6 +101,7 @@ export default function PropertyForm({
                   address_line: property.address_line ?? '',
                   latitude: property.latitude ?? '',
                   longitude: property.longitude ?? '',
+                  is_featured: property.is_featured,
               }
             : {
                   title: '',
@@ -106,6 +109,7 @@ export default function PropertyForm({
                   type: 'apartment',
                   purpose: 'sale',
                   status: 'draft',
+                  is_featured: false,
                   price: '',
                   area_sqm: '',
                   bedrooms: '0',
@@ -160,7 +164,9 @@ export default function PropertyForm({
             });
         } else {
             payload.images = newItems.map((item) => item.file);
-            payload.cover_index = newItems.findIndex((i) => i.key === coverItem?.key);
+            if (coverItem) {
+                payload.cover_index = newItems.findIndex((i) => i.key === coverItem.key);
+            }
 
             router.post(route('dashboard.properties.store'), payload as never, {
                 forceFormData: true,
@@ -273,6 +279,11 @@ export default function PropertyForm({
                                 </Select>
                             </div>
                         )}
+
+                        <label className="flex items-center gap-3 border border-border px-4 py-3">
+                            <Switch checked={watch('is_featured')} onCheckedChange={(v) => setValue('is_featured', v)} />
+                            <span className="text-sm text-foreground">عقار مميز (يظهر في الصفحة الرئيسية)</span>
+                        </label>
                     </div>
                 )}
 

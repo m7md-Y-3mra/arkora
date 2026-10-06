@@ -59,10 +59,14 @@ export default function Search({ properties, amenities }: SearchProps) {
         }
 
         const timeout = setTimeout(() => {
-            const query: Record<string, string | number | number[]> = {};
+            const query: Record<string, string | number> = {};
             Object.entries(filters).forEach(([key, value]) => {
                 if (value === '' || value === null) return;
-                if (Array.isArray(value) && value.length === 0) return;
+                if (Array.isArray(value)) {
+                    if (value.length === 0) return;
+                    query[key] = value.join(',');
+                    return;
+                }
                 query[key] = value;
             });
 
@@ -75,7 +79,7 @@ export default function Search({ properties, amenities }: SearchProps) {
 
         return () => clearTimeout(timeout);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters]);
+    }, [JSON.stringify(filters)]);
 
     const toggleAmenity = (id: number) => {
         setFilters((prev) => ({

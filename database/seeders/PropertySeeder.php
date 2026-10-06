@@ -42,6 +42,15 @@ class PropertySeeder extends Seeder
                 $property->amenities()->sync(
                     $amenityIds->random(fake()->numberBetween(2, 6))->all()
                 );
+
+                $imageCount = fake()->numberBetween(3, 6);
+                for ($i = 0; $i < $imageCount; $i++) {
+                    $property->images()->create([
+                        'path' => "https://picsum.photos/seed/arkora-{$property->id}-{$i}/1200/900",
+                        'sort_order' => $i,
+                        'is_cover' => $i === 0,
+                    ]);
+                }
             });
 
         $publishedProperties = Property::where('status', 'published')->get();
