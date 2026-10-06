@@ -1,10 +1,11 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Building2, Eye, FileCheck2, MessageSquareText } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatNumber, formatPrice, leadStatusLabel, statusLabel } from '@/lib/format';
+import type { PageProps } from '@/types';
 import type { Lead, Property } from '@/types/models';
 
 interface Stats {
@@ -25,6 +26,29 @@ export default function Overview({
     recentLeads: Lead[];
     recentProperties: Property[];
 }) {
+    const { auth } = usePage<PageProps>().props;
+    const canManage = auth.roles?.some((r) => r === 'admin' || r === 'agent');
+
+    if (!canManage) {
+        return (
+            <DashboardLayout title="نظرة عامة">
+                <Head title="نظرة عامة" />
+                <Card className="rounded-sm">
+                    <CardContent className="p-10 text-center">
+                        <h2 className="font-heading text-2xl text-foreground">مرحباً {auth.user?.name}</h2>
+                        <p className="mt-3 text-muted-foreground">
+                            يمكنك تصفح العقارات والتواصل مع الوكلاء من الصفحة الرئيسية، أو تحديث
+                            معلوماتك الشخصية من هنا.
+                        </p>
+                        <Link href={route('search')} className="mt-6 inline-block text-bronze-600 hover:underline">
+                            تصفح العقارات ←
+                        </Link>
+                    </CardContent>
+                </Card>
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout title="نظرة عامة">
             <Head title="نظرة عامة" />
