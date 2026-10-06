@@ -17,6 +17,15 @@ class UpdatePropertyRequest extends FormRequest
         return $this->user()->hasRole('agent') && $property->agent_id === $this->user()->id;
     }
 
+    protected function prepareForValidation(): void
+    {
+        foreach (['floor', 'year_built', 'latitude', 'longitude', 'agent_id', 'cover_key'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -46,7 +55,7 @@ class UpdatePropertyRequest extends FormRequest
             'existing_images.*.id' => ['required', 'integer', 'exists:property_images,id'],
             'existing_images.*.sort_order' => ['required', 'integer'],
             'existing_images.*.is_cover' => ['boolean'],
-            'cover_index' => ['nullable', 'integer', 'exists:property_images,id'],
+            'cover_key' => ['nullable', 'string', 'regex:/^(existing:\d+|new:\d+)$/'],
         ];
     }
 }

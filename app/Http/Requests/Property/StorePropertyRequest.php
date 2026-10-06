@@ -11,6 +11,15 @@ class StorePropertyRequest extends FormRequest
         return $this->user()->hasAnyRole(['admin', 'agent']);
     }
 
+    protected function prepareForValidation(): void
+    {
+        foreach (['floor', 'year_built', 'latitude', 'longitude', 'agent_id'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [

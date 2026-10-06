@@ -97,8 +97,8 @@ class PropertyController extends Controller
         $amenityIds = $data['amenities'] ?? [];
         $newImages = $request->file('new_images', []);
         $existingImages = $data['existing_images'] ?? [];
-        $coverIndex = $data['cover_index'] ?? null;
-        unset($data['amenities'], $data['new_images'], $data['existing_images'], $data['cover_index'], $data['agent_id']);
+        $coverKey = $data['cover_key'] ?? null;
+        unset($data['amenities'], $data['new_images'], $data['existing_images'], $data['cover_key'], $data['agent_id']);
 
         $this->properties->update($property, $data);
         $this->properties->syncAmenities($property, $amenityIds);
@@ -117,19 +117,27 @@ class PropertyController extends Controller
             }
         }
 
-        $nextOrder = $property->images()->max('sort_order') + 1;
+        $nextOrder = (int) $property->images()->max('sort_order') + 1;
+        $createdNewImages = [];
         foreach ($newImages as $index => $file) {
             $path = $file->store('properties', 'public');
-            $property->images()->create([
+            $createdNewImages[$index] = $property->images()->create([
                 'path' => $path,
                 'sort_order' => $nextOrder + $index,
                 'is_cover' => false,
             ]);
         }
 
-        if ($coverIndex !== null) {
+        if ($coverKey && str_starts_with($coverKey, 'existing:')) {
+            $coverId = (int) substr($coverKey, strlen('existing:'));
             $property->images()->update(['is_cover' => false]);
-            $property->images()->where('id', $coverIndex)->update(['is_cover' => true]);
+            $property->images()->where('id', $coverId)->update(['is_cover' => true]);
+        } elseif ($coverKey && str_starts_with($coverKey, 'new:')) {
+            $index = (int) substr($coverKey, strlen('new:'));
+            if (isset($createdNewImages[$index])) {
+                $property->images()->update(['is_cover' => false]);
+                $createdNewImages[$index]->update(['is_cover' => true]);
+            }
         }
 
         return redirect()->route('dashboard.properties.index')->with('success', 'تم تحديث العقار بنجاح.');
