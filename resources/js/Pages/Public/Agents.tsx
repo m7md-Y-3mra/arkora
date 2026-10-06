@@ -32,7 +32,12 @@ export default function Agents({ agents }: { agents: AgentWithStats[] }) {
                                         {agent.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <h3 className="font-heading text-lg text-foreground">{agent.name}</h3>
+                                        <Link
+                                            href={route('agents.show', agent.id)}
+                                            className="font-heading text-lg text-foreground hover:text-bronze-600"
+                                        >
+                                            {agent.name}
+                                        </Link>
                                         {agent.agent_profile?.agency_name && (
                                             <p className="text-sm text-muted-foreground">
                                                 {agent.agent_profile.agency_name}

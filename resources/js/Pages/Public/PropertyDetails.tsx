@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     BedDouble,
     Bath,
@@ -8,10 +8,14 @@ import {
     Layers,
     Check,
     Phone,
+    Heart,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { ContactAgentForm } from '@/components/property/ContactAgentForm';
+import { PropertyMap } from '@/components/property/PropertyMap';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -23,10 +27,21 @@ import {
     propertyTypeLabel,
     purposeLabel,
 } from '@/lib/format';
+import type { PageProps } from '@/types';
 import type { Property } from '@/types/models';
 
 export default function PropertyDetails({ property }: { property: Property }) {
     const images = property.images ?? [];
+    const { auth } = usePage<PageProps>().props;
+
+    const toggleFavorite = () => {
+        if (!auth.user) {
+            toast.error('يرجى تسجيل الدخول لحفظ العقار');
+            return;
+        }
+
+        router.post(route('favorites.toggle', property.id), {}, { preserveScroll: true });
+    };
 
     return (
         <PublicLayout>
@@ -42,7 +57,18 @@ export default function PropertyDetails({ property }: { property: Property }) {
                         <h1 className="mt-2 font-heading text-3xl text-foreground sm:text-4xl">{property.title}</h1>
                     </div>
                     <div className="text-end">
-                        <p className="font-heading text-3xl text-bronze-600">{formatPrice(property.price)}</p>
+                        <div className="flex items-center justify-end gap-3">
+                            <p className="font-heading text-3xl text-bronze-600">{formatPrice(property.price)}</p>
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                className="rounded-full"
+                                onClick={toggleFavorite}
+                                aria-label="حفظ العقار"
+                            >
+                                <Heart className={`h-4 w-4 ${property.is_favorited ? 'fill-destructive text-destructive' : ''}`} />
+                            </Button>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                             {purposeLabel(property.purpose)} · {propertyTypeLabel(property.type)}
                         </p>
@@ -112,6 +138,19 @@ export default function PropertyDetails({ property }: { property: Property }) {
                                 <p className="mt-1 font-medium text-foreground">{property.address_line ?? '—'}</p>
                             </div>
                         </section>
+
+                        {property.latitude && property.longitude && (
+                            <section className="mt-10">
+                                <h2 className="font-heading text-2xl text-foreground">الموقع على الخريطة</h2>
+                                <div className="mt-4 overflow-hidden border border-border">
+                                    <PropertyMap
+                                        latitude={Number(property.latitude)}
+                                        longitude={Number(property.longitude)}
+                                        title={property.title}
+                                    />
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     <div className="space-y-6">
@@ -119,7 +158,12 @@ export default function PropertyDetails({ property }: { property: Property }) {
                             <Card className="rounded-sm">
                                 <CardContent className="p-6">
                                     <p className="text-sm text-muted-foreground">الوكيل العقاري</p>
-                                    <h3 className="mt-1 font-heading text-xl text-foreground">{property.agent.name}</h3>
+                                    <Link
+                                        href={route('agents.show', property.agent.id)}
+                                        className="mt-1 block font-heading text-xl text-foreground hover:text-bronze-600"
+                                    >
+                                        {property.agent.name}
+                                    </Link>
                                     {property.agent.agent_profile?.agency_name && (
                                         <p className="text-sm text-muted-foreground">
                                             {property.agent.agent_profile.agency_name}

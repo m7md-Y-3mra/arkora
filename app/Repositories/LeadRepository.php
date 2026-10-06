@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Repositories\Contracts\LeadRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 
 class LeadRepository implements LeadRepositoryInterface
 {
@@ -49,5 +50,28 @@ class LeadRepository implements LeadRepositoryInterface
             ->when($agentId, fn (Builder $q) => $q->where('agent_id', $agentId))
             ->where('status', 'new')
             ->count();
+    }
+
+    public function trendLast14Days(?int $agentId): array
+    {
+        $start = Carbon::now()->subDays(13)->startOfDay();
+
+        $rows = $this->model->query()
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as count')
+            ->when($agentId, fn (Builder $q) => $q->where('agent_id', $agentId))
+            ->where('created_at', '>=', $start)
+            ->groupBy('day')
+            ->pluck('count', 'day');
+
+        $trend = [];
+        for ($i = 0; $i < 14; $i++) {
+            $date = $start->copy()->addDays($i)->format('Y-m-d');
+            $trend[] = [
+                'date' => $date,
+                'count' => (int) ($rows[$date] ?? 0),
+            ];
+        }
+
+        return $trend;
     }
 }

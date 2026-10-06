@@ -1,11 +1,27 @@
-import { Link } from '@inertiajs/react';
-import { BedDouble, Bath, Ruler, MapPin } from 'lucide-react';
+import type { MouseEvent } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BedDouble, Bath, Ruler, MapPin, Heart } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { formatArea, formatPrice, propertyTypeLabel, purposeLabel } from '@/lib/format';
+import type { PageProps } from '@/types';
 import type { Property } from '@/types/models';
 
 export function PropertyCard({ property, className }: { property: Property; className?: string }) {
     const cover = property.images?.find((img) => img.is_cover) ?? property.images?.[0];
+    const { auth } = usePage<PageProps>().props;
+
+    const toggleFavorite = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!auth.user) {
+            toast.error('يرجى تسجيل الدخول لحفظ العقار');
+            return;
+        }
+
+        router.post(route('favorites.toggle', property.id), {}, { preserveScroll: true, preserveState: true });
+    };
 
     return (
         <Link
@@ -31,6 +47,14 @@ export function PropertyCard({ property, className }: { property: Property; clas
                         {propertyTypeLabel(property.type)}
                     </Badge>
                 </div>
+
+                <button
+                    onClick={toggleFavorite}
+                    className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 transition-transform hover:scale-110"
+                    aria-label="حفظ العقار"
+                >
+                    <Heart className={`h-4 w-4 ${property.is_favorited ? 'fill-destructive text-destructive' : 'text-foreground'}`} />
+                </button>
             </div>
 
             <div className="p-5">

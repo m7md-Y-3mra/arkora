@@ -1,10 +1,21 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Building2, Eye, FileCheck2, MessageSquareText } from 'lucide-react';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatNumber, formatPrice, leadStatusLabel, statusLabel } from '@/lib/format';
+import { formatNumber, formatPrice, leadStatusLabel, propertyTypeLabel, statusLabel } from '@/lib/format';
 import type { PageProps } from '@/types';
 import type { Lead, Property } from '@/types/models';
 
@@ -15,16 +26,30 @@ interface Stats {
     draft_properties: number;
 }
 
+interface TrendPoint {
+    date: string;
+    count: number;
+}
+
+interface TypeCount {
+    type: string;
+    count: number;
+}
+
 export default function Overview({
     stats,
     newLeadsCount,
     recentLeads,
     recentProperties,
+    leadsTrend,
+    propertyTypeCounts,
 }: {
     stats: Stats;
     newLeadsCount: number;
     recentLeads: Lead[];
     recentProperties: Property[];
+    leadsTrend: TrendPoint[];
+    propertyTypeCounts: TypeCount[];
 }) {
     const { auth } = usePage<PageProps>().props;
     const canManage = auth.roles?.some((r) => r === 'admin' || r === 'agent');
@@ -49,6 +74,16 @@ export default function Overview({
         );
     }
 
+    const trendData = leadsTrend.map((point) => ({
+        ...point,
+        label: new Date(point.date).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }),
+    }));
+
+    const typeData = propertyTypeCounts.map((row) => ({
+        ...row,
+        label: propertyTypeLabel(row.type),
+    }));
+
     return (
         <DashboardLayout title="نظرة عامة">
             <Head title="نظرة عامة" />
@@ -58,6 +93,49 @@ export default function Overview({
                 <StatCard label="العقارات المنشورة" value={formatNumber(stats.active_listings)} icon={FileCheck2} accent />
                 <StatCard label="إجمالي المشاهدات" value={formatNumber(stats.total_views)} icon={Eye} />
                 <StatCard label="طلبات جديدة" value={formatNumber(newLeadsCount)} icon={MessageSquareText} accent />
+            </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+                <Card className="rounded-sm">
+                    <CardContent className="p-6">
+                        <h2 className="font-heading text-xl text-foreground">طلبات التواصل خلال ١٤ يوماً</h2>
+                        <div className="mt-4 h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={trendData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="label" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <YAxis allowDecimals={false} fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <Tooltip
+                                        contentStyle={{ fontSize: 12, borderRadius: 0, direction: 'rtl' }}
+                                        labelFormatter={(label) => `${label}`}
+                                        formatter={(value) => [value, 'طلبات']}
+                                    />
+                                    <Line type="monotone" dataKey="count" stroke="#B59A7A" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-sm">
+                    <CardContent className="p-6">
+                        <h2 className="font-heading text-xl text-foreground">توزيع العقارات حسب النوع</h2>
+                        <div className="mt-4 h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={typeData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="label" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <YAxis allowDecimals={false} fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <Tooltip
+                                        contentStyle={{ fontSize: 12, borderRadius: 0, direction: 'rtl' }}
+                                        formatter={(value) => [value, 'عقار']}
+                                    />
+                                    <Bar dataKey="count" fill="#0F172A" radius={0} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-2">

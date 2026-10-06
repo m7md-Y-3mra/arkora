@@ -28,8 +28,11 @@ class PropertySearchController extends Controller
             $filters['amenities'] = array_map('intval', explode(',', $filters['amenities']));
         }
 
+        $properties = $this->properties->paginatePublished(array_filter($filters), 12);
+        $this->properties->attachFavoriteFlags($properties, $request->user());
+
         return Inertia::render('Public/Search', [
-            'properties' => $this->properties->paginatePublished(array_filter($filters), 12),
+            'properties' => $properties,
             'filters' => $filters,
             'amenities' => $this->amenities->all(),
         ]);

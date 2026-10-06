@@ -3,6 +3,7 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\Property;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -36,5 +37,19 @@ interface PropertyRepositoryInterface
 
     public function dashboardStats(?int $agentId): array;
 
+    public function countsByType(?int $agentId): array;
+
     public function agentsWithListings(): Collection;
+
+    public function findAgentProfile(int $agentId): ?User;
+
+    public function paginatePublishedByAgent(int $agentId, int $perPage = 12): LengthAwarePaginator;
+
+    public function toggleFavorite(User $user, Property $property): bool;
+
+    public function favoritedIds(User $user): array;
+
+    public function paginateFavorites(User $user, int $perPage = 12): LengthAwarePaginator;
+
+    public function attachFavoriteFlags(iterable $properties, ?User $user): void;
 }

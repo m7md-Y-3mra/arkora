@@ -73,4 +73,9 @@ class Property extends Model
     {
         return $this->images()->where('is_cover', true);
     }
+
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+    }
 }

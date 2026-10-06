@@ -14,4 +14,6 @@ interface LeadRepositoryInterface
     public function updateStatus(Lead $lead, string $status): Lead;
 
     public function countNew(?int $agentId): int;
+
+    public function trendLast14Days(?int $agentId): array;
 }

@@ -75,6 +75,7 @@ export interface Property {
     views_count: number;
     published_at: string | null;
     created_at: string;
+    is_favorited?: boolean;
     images?: PropertyImage[];
     amenities?: Amenity[];
     agent?: User;

@@ -5,6 +5,7 @@ import {
     MessageSquareText,
     Users,
     UserCircle,
+    Heart,
     LogOut,
 } from 'lucide-react';
 import { ArkoraLogo } from '@/components/ArkoraLogo';
@@ -53,6 +54,12 @@ export function DashboardSidebar() {
             icon: Users,
             roles: ['admin'],
             active: currentUrl.startsWith('/dashboard/users'),
+        },
+        {
+            href: route('favorites.index'),
+            label: 'العقارات المحفوظة',
+            icon: Heart,
+            active: currentUrl === '/favorites',
         },
         {
             href: route('profile.edit'),

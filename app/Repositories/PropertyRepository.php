@@ -194,6 +194,18 @@ class PropertyRepository implements PropertyRepositoryInterface
         ];
     }
 
+    public function countsByType(?int $agentId): array
+    {
+        return $this->model->query()
+            ->selectRaw('type, COUNT(*) as count')
+            ->when($agentId, fn (Builder $q) => $q->where('agent_id', $agentId))
+            ->groupBy('type')
+            ->orderByDesc('count')
+            ->get()
+            ->map(fn ($row) => ['type' => $row->type, 'count' => (int) $row->count])
+            ->all();
+    }
+
     public function agentsWithListings(): Collection
     {
         return User::query()
@@ -203,6 +215,65 @@ class PropertyRepository implements PropertyRepositoryInterface
             ->withCount(['properties' => fn (Builder $q) => $q->where('status', 'published')])
             ->with(['agentProfile', 'properties' => fn ($q) => $q->where('status', 'published')->with(['images' => fn ($i) => $i->where('is_cover', true)])->limit(3)])
             ->get();
+    }
+
+    public function findAgentProfile(int $agentId): ?User
+    {
+        return User::query()
+            ->role('agent')
+            ->where('is_active', true)
+            ->with('agentProfile')
+            ->withCount(['properties' => fn (Builder $q) => $q->where('status', 'published')])
+            ->find($agentId);
+    }
+
+    public function paginatePublishedByAgent(int $agentId, int $perPage = 12): LengthAwarePaginator
+    {
+        return $this->model->query()
+            ->where('agent_id', $agentId)
+            ->where('status', 'published')
+            ->with(['images' => fn ($q) => $q->where('is_cover', true)])
+            ->latest('published_at')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    public function toggleFavorite(User $user, Property $property): bool
+    {
+        $existing = $user->favoriteProperties()->where('property_id', $property->id)->exists();
+
+        if ($existing) {
+            $user->favoriteProperties()->detach($property->id);
+
+            return false;
+        }
+
+        $user->favoriteProperties()->attach($property->id);
+
+        return true;
+    }
+
+    public function favoritedIds(User $user): array
+    {
+        return $user->favoriteProperties()->pluck('properties.id')->all();
+    }
+
+    public function paginateFavorites(User $user, int $perPage = 12): LengthAwarePaginator
+    {
+        return $user->favoriteProperties()
+            ->with(['images' => fn ($q) => $q->where('is_cover', true), 'agent'])
+            ->latest('favorites.created_at')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    public function attachFavoriteFlags(iterable $properties, ?User $user): void
+    {
+        $favoriteIds = $user ? $this->favoritedIds($user) : [];
+
+        foreach ($properties as $property) {
+            $property->setAttribute('is_favorited', in_array($property->id, $favoriteIds, true));
+        }
     }
 
     private function uniqueSlug(string $title, ?int $ignoreId = null): string

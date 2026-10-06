@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ContactAgentRequest;
 use App\Models\Property;
+use App\Notifications\NewLeadReceived;
 use App\Repositories\Contracts\LeadRepositoryInterface;
 use Illuminate\Http\RedirectResponse;
 
@@ -15,11 +16,14 @@ class LeadController extends Controller
 
     public function store(ContactAgentRequest $request, Property $property): RedirectResponse
     {
-        $this->leads->create([
+        $lead = $this->leads->create([
             ...$request->validated(),
             'property_id' => $property->id,
             'agent_id' => $property->agent_id,
         ]);
+
+        $lead->load('property');
+        $property->agent?->notify(new NewLeadReceived($lead));
 
         return back()->with('success', 'تم إرسال رسالتك إلى الوكيل بنجاح.');
     }

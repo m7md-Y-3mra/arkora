@@ -27,6 +27,8 @@ class DashboardController extends Controller
             'newLeadsCount' => $this->leads->countNew($agentId),
             'recentLeads' => $this->leads->paginateForAgent($agentId, [], 5)->items(),
             'recentProperties' => $this->properties->paginateForDashboard($agentId, [], 5)->items(),
+            'leadsTrend' => $this->leads->trendLast14Days($agentId),
+            'propertyTypeCounts' => $this->properties->countsByType($agentId),
         ]);
     }
 }

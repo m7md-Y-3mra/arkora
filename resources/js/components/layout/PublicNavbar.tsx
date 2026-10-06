@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Heart } from 'lucide-react';
 import { ArkoraLogo } from '@/components/ArkoraLogo';
 import { Button } from '@/components/ui/button';
 import type { PageProps } from '@/types';
@@ -36,9 +36,16 @@ export function PublicNavbar() {
 
                 <div className="hidden items-center gap-3 md:flex">
                     {auth.user ? (
-                        <Button asChild variant="default" className="rounded-none">
-                            <Link href={route('dashboard')}>لوحة التحكم</Link>
-                        </Button>
+                        <>
+                            <Button asChild variant="ghost" size="icon" className="rounded-none">
+                                <Link href={route('favorites.index')} aria-label="العقارات المحفوظة">
+                                    <Heart className="h-5 w-5" />
+                                </Link>
+                            </Button>
+                            <Button asChild variant="default" className="rounded-none">
+                                <Link href={route('dashboard')}>لوحة التحكم</Link>
+                            </Button>
+                        </>
                     ) : (
                         <>
                             <Button asChild variant="ghost" className="rounded-none">
