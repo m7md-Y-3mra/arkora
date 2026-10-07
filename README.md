@@ -1,66 +1,117 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Arkora
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Arkora (أركورا) is a full-stack, Arabic-first real estate platform. It covers both sides of the product: a public marketing/search site for buyers and renters, and a role-based back-office dashboard for agents and admins to manage listings and leads.
 
-## About Laravel
+Live demo: https://arkora.onrender.com
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Note on the demo: it runs on free-tier hosting. The web service spins down after periods of inactivity, so the first request after a while can take 30-60 seconds to wake up. Subsequent requests are fast.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## What it does
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Public site**
 
-## Learning Laravel
+- Home page with featured listings
+- Property search with filters (purpose, type, city, district, price range, area, bedrooms, bathrooms, amenities) and sorting, backed by real database queries, not client-side filtering
+- Property detail pages with an image gallery, an interactive map (Leaflet/OpenStreetMap) built from the property's stored coordinates, and a lead/contact form
+- Agent directory and individual agent profile pages showing each agent's bio, stats, and published listings
+- Saved/favorite properties for signed-in users
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Dashboard (role-aware: admin, agent, client)**
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- Authentication (register, login, email verification, password reset) via Laravel Breeze
+- Overview page with live stats, a 14-day lead trend chart, and a property-type distribution chart (Recharts)
+- Property CRUD with a multi-step form, drag-and-drop image reordering and upload, amenities, and draft/published status
+- Lead management: every contact-form submission creates a lead and triggers a notification (email + in-app bell with unread count) to the owning agent
+- User/role management for admins
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Access is enforced server-side per role; the client dashboard, for example, sees a scoped-down view with no management tools.
 
-## Laravel Sponsors
+## Why it's built this way
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- **Repository pattern**: controllers depend on repository interfaces (`app/Repositories/Contracts`), not Eloquent directly, so query logic for properties and leads is centralized and swappable/testable.
+- **Inertia instead of a separate API**: the backend renders React pages directly through Inertia, which avoids building and maintaining a separate REST/JSON API while still getting a full SPA-like React frontend.
+- **Server-driven validation**: forms use `react-hook-form` + `zod` on the client for UX, but the server is the source of truth; validation errors returned by Laravel are mapped back into the form.
+- **RTL as a first-class concern**: layout, spacing, and component variants (e.g. sheet/drawer sides) use logical CSS properties and RTL-aware component props rather than a single global `dir="rtl"` override, since the app is Arabic-first with English as a fallback locale.
 
-### Premium Partners
+## Tech stack
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+**Backend**
+- PHP 8.2+, Laravel 11
+- PostgreSQL
+- Inertia.js (Laravel adapter)
+- Spatie `laravel-permission` for role-based access (admin/agent/client)
+- Laravel Notifications (mail + database channels)
+- Pest for testing
 
-## Contributing
+**Frontend**
+- React 19 + TypeScript
+- Inertia.js (React adapter)
+- Tailwind CSS + shadcn/ui (Radix UI primitives)
+- `react-hook-form` + `zod` for forms
+- `@tanstack/react-table` for data tables
+- `recharts` for dashboard analytics
+- `leaflet` / `react-leaflet` for the property map
+- `@dnd-kit` for drag-and-drop image reordering
+- `nuqs` for URL-synced search filters
+- `zustand` for lightweight UI state
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Infrastructure**
+- Docker (multi-stage build: Node for asset compilation, PHP/Alpine for the runtime)
+- Deployed on Render via a `render.yaml` blueprint (web service + managed PostgreSQL)
 
-## Code of Conduct
+## Local setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Prerequisites: PHP 8.2+ with the `pdo_pgsql` extension, Composer, Node 20+, and a PostgreSQL database.
 
-## Security Vulnerabilities
+```bash
+composer install
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+cp .env.example .env
+php artisan key:generate
+```
 
-## License
+Set the database credentials in `.env` (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`), then:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
+
+For day-to-day development, run the Vite dev server and Laravel's server side by side:
+
+```bash
+npm run dev
+php artisan serve
+```
+
+## Testing
+
+```bash
+php artisan test
+```
+
+The suite covers the authentication flows (registration, login, email verification, password reset/update, profile updates) end to end against a real database connection, using an isolated `arkora_testing` database so test runs don't touch development data.
+
+## Deployment
+
+The app ships as a Docker image (`Dockerfile`): one stage builds the frontend assets with Node, the other installs PHP dependencies and runs the app. `render.yaml` describes the full infrastructure (web service + PostgreSQL instance) as a Render Blueprint, so the whole stack can be recreated with "New Blueprint" pointed at this repository. On boot, the container runs pending migrations, caches config/routes/views, and serves the app.
+
+## Project structure
+
+```
+app/
+  Http/Controllers/        Public site + Dashboard controllers
+  Models/                  Eloquent models
+  Repositories/             Repository implementations
+  Repositories/Contracts/  Repository interfaces
+  Notifications/           Mail + database notifications (e.g. new lead received)
+database/
+  migrations/
+  seeders/
+resources/js/
+  Pages/                   Inertia pages (Public/, Dashboard/, Favorites/, Auth/)
+  components/              Shared React components (property cards, map, layout, ui)
+  types/                   Shared TypeScript types for models and page props
+```
