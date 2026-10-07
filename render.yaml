@@ -23,7 +23,7 @@ services:
       - key: APP_FALLBACK_LOCALE
         value: en
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: LOG_CHANNEL
         value: stack
       - key: LOG_LEVEL
