@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM php:8.3-cli-alpine AS app
+FROM php:8.4-cli-alpine AS app
 
 RUN apk add --no-cache postgresql-dev icu-dev libzip-dev oniguruma-dev \
     && docker-php-ext-install pdo_pgsql pgsql intl zip bcmath opcache
