@@ -12,8 +12,16 @@ class PropertySeeder extends Seeder
 {
     public function run(): void
     {
+        if (Property::exists()) {
+            $this->command?->info('Properties already seeded, skipping.');
+
+            return;
+        }
+
+        // Own email namespace so seeded users never collide with leftovers from earlier runs.
         $agents = User::factory()
             ->count(8)
+            ->sequence(fn ($sequence) => ['email' => "agent{$sequence->index}@demo.arkora.test"])
             ->create()
             ->each(function (User $agent) {
                 $agent->syncRoles(['agent']);
@@ -28,17 +36,18 @@ class PropertySeeder extends Seeder
 
         $clients = User::factory()
             ->count(15)
+            ->sequence(fn ($sequence) => ['email' => "client{$sequence->index}@demo.arkora.test"])
             ->create()
             ->each(fn (User $client) => $client->syncRoles(['client']));
 
         $amenityIds = Amenity::pluck('id');
 
+        // Pick the agent in a state so the factory doesn't create a throwaway user per property.
         Property::factory()
             ->count(60)
-            ->make()
-            ->each(function (Property $property) use ($agents, $amenityIds) {
-                $property->agent_id = $agents->random()->id;
-                $property->save();
+            ->state(fn () => ['agent_id' => $agents->random()->id])
+            ->create()
+            ->each(function (Property $property) use ($amenityIds) {
                 $property->amenities()->sync(
                     $amenityIds->random(fake()->numberBetween(2, 6))->all()
                 );
