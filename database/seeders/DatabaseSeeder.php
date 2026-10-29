@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
                 User::factory()->raw(['name' => 'سارة العميلة', 'email' => 'client@arkora.test']),
             );
             $demoClient->syncRoles(['client']);
+
+            $this->call(CrmSeeder::class);
         });
     }
 }
