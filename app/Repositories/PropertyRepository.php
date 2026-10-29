@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\AgentProfile;
 use App\Models\Property;
 use App\Models\User;
 use App\Repositories\Contracts\PropertyRepositoryInterface;
@@ -206,15 +207,46 @@ class PropertyRepository implements PropertyRepositoryInterface
             ->all();
     }
 
-    public function agentsWithListings(): Collection
+    public function paginateAgents(array $filters, int $perPage = 12): LengthAwarePaginator
     {
-        return User::query()
+        $query = User::query()
             ->role('agent')
             ->where('is_active', true)
-            ->whereHas('properties', fn (Builder $q) => $q->where('status', 'published'))
+            ->whereHas('properties', fn (Builder $q) => $q
+                ->where('status', 'published')
+                ->when($filters['city'] ?? null, fn (Builder $q, $city) => $q->where('city', $city)))
+            ->when($filters['search'] ?? null, function (Builder $q, $term) {
+                $q->where(function (Builder $sub) use ($term) {
+                    $sub->whereLike('name', "%{$term}%")
+                        ->orWhereHas('agentProfile', fn (Builder $p) => $p->whereLike('agency_name', "%{$term}%"));
+                });
+            })
+            ->when($filters['min_experience'] ?? null, fn (Builder $q, $years) => $q
+                ->whereHas('agentProfile', fn (Builder $p) => $p->where('years_experience', '>=', (int) $years)))
             ->withCount(['properties' => fn (Builder $q) => $q->where('status', 'published')])
-            ->with(['agentProfile', 'properties' => fn ($q) => $q->where('status', 'published')->with(['images' => fn ($i) => $i->where('is_cover', true)])->limit(3)])
-            ->get();
+            ->with(['agentProfile', 'properties' => fn ($q) => $q->where('status', 'published')->with(['images' => fn ($i) => $i->where('is_cover', true)])->limit(3)]);
+
+        match ($filters['sort'] ?? 'listings') {
+            'experience' => $query->orderByDesc(
+                AgentProfile::select('years_experience')->whereColumn('agent_profiles.user_id', 'users.id')
+            ),
+            'name' => $query->orderBy('name'),
+            default => $query->orderByDesc('properties_count'),
+        };
+
+        return $query->orderBy('users.id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    public function publishedCities(): array
+    {
+        return $this->model->query()
+            ->where('status', 'published')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city')
+            ->all();
     }
 
     public function findAgentProfile(int $agentId): ?User

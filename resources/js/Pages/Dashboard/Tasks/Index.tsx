@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PageLinks } from '@/components/dashboard/PageLinks';
+import { Pagination } from '@/components/common/Pagination';
 import { TaskRow } from '@/components/crm/TaskList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -62,7 +62,7 @@ export default function TasksIndex({
                 </CardContent>
             </Card>
 
-            <PageLinks page={tasks} />
+            <Pagination page={tasks} />
         </DashboardLayout>
     );
 }
