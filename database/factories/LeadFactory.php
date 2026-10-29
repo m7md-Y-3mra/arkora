@@ -17,7 +17,7 @@ class LeadFactory extends Factory
             'email' => fake()->safeEmail(),
             'phone' => fake()->numerify('05########'),
             'message' => fake()->paragraph(),
-            'status' => fake()->randomElement(['new', 'new', 'contacted', 'closed']),
+            'status' => fake()->randomElement(['new', 'new', 'contacted', 'viewing', 'negotiation', 'won', 'lost']),
         ];
     }
 }
