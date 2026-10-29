@@ -81,19 +81,65 @@ export interface Property {
     agent?: User;
 }
 
-export type LeadStatus = 'new' | 'contacted' | 'closed';
+export type LeadStatus = 'new' | 'contacted' | 'viewing' | 'negotiation' | 'won' | 'lost';
+
+export interface Contact {
+    id: number;
+    agent_id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    notes: string | null;
+    created_at: string;
+    leads_count?: number;
+    leads_max_created_at?: string | null;
+    agent?: Pick<User, 'id' | 'name'>;
+    leads?: Lead[];
+}
+
+export type LeadActivityType = 'note' | 'call' | 'email' | 'meeting' | 'stage_change' | 'assignment';
+
+export interface LeadActivity {
+    id: number;
+    lead_id: number;
+    user_id: number | null;
+    type: LeadActivityType;
+    body: string | null;
+    meta: Record<string, string | number | null> | null;
+    created_at: string;
+    user?: Pick<User, 'id' | 'name'> | null;
+    lead?: Pick<Lead, 'id' | 'name' | 'property_id'> & { property?: Pick<Property, 'id' | 'title'> | null };
+}
+
+export interface LeadTask {
+    id: number;
+    lead_id: number;
+    user_id: number;
+    title: string;
+    due_at: string;
+    completed_at: string | null;
+    created_at: string;
+    user?: Pick<User, 'id' | 'name'>;
+    lead?: Pick<Lead, 'id' | 'name' | 'status' | 'property_id'> & { property?: Pick<Property, 'id' | 'title'> | null };
+}
 
 export interface Lead {
     id: number;
     property_id: number | null;
     agent_id: number;
+    contact_id: number | null;
     name: string;
     email: string;
     phone: string | null;
     message: string;
     status: LeadStatus;
     created_at: string;
+    updated_at: string;
     property?: Property | null;
+    agent?: Pick<User, 'id' | 'name' | 'email'>;
+    contact?: Contact | null;
+    activities?: LeadActivity[];
+    tasks?: LeadTask[];
 }
 
 export interface PaginatedResponse<T> {

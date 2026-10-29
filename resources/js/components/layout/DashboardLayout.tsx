@@ -16,7 +16,7 @@ export function DashboardLayout({ title, children }: PropsWithChildren<{ title: 
     return (
         <div className="flex min-h-screen bg-muted/40">
             <DashboardSidebar />
-            <div className="flex min-h-screen flex-1 flex-col lg:ms-0">
+            <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ms-0">
                 <DashboardTopbar title={title} />
                 <main className="flex-1 p-6">{children}</main>
             </div>
