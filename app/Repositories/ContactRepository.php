@@ -29,7 +29,7 @@ class ContactRepository implements ContactRepositoryInterface
                         ->orWhere('phone', 'like', "%{$term}%");
                 });
             })
-            ->orderByDesc('leads_max_created_at')
+            ->orderByRaw('leads_max_created_at DESC NULLS LAST')
             ->paginate($perPage)
             ->withQueryString();
     }

@@ -100,6 +100,7 @@ test('an admin can reassign a lead and its open tasks follow', function () {
     $from = crmUser('agent');
     $to = crmUser('agent');
     $lead = crmLead($from);
+    $previousContactId = $lead->contact_id;
 
     $open = LeadTask::factory()->create(['lead_id' => $lead->id, 'user_id' => $from->id]);
     $done = LeadTask::factory()->create(['lead_id' => $lead->id, 'user_id' => $from->id, 'completed_at' => now()]);
@@ -115,9 +116,28 @@ test('an admin can reassign a lead and its open tasks follow', function () {
         ->and($lead->contact->agent_id)->toBe($to->id)
         ->and($open->refresh()->user_id)->toBe($to->id)
         ->and($done->refresh()->user_id)->toBe($from->id)
-        ->and($lead->activities()->first()->type)->toBe('assignment');
+        ->and($lead->activities()->first()->type)->toBe('assignment')
+        ->and(Contact::find($previousContactId))->toBeNull();
 
     Notification::assertSentTo($to, NewLeadReceived::class);
+});
+
+test('reassigning keeps the previous agent\'s contact when it still has leads or notes', function () {
+    $admin = crmUser('admin');
+    $from = crmUser('agent');
+    $to = crmUser('agent');
+    $moved = crmLead($from);
+    crmLead($from);
+
+    $this->actingAs($admin)->patch(route('dashboard.leads.assign', $moved), ['agent_id' => $to->id]);
+
+    expect(Contact::where('agent_id', $from->id)->first()->leads()->count())->toBe(1);
+
+    $noted = crmLead($from, ['email' => 'noted@example.com']);
+    $noted->contact->update(['notes' => 'عميل مهم']);
+    $this->actingAs($admin)->patch(route('dashboard.leads.assign', $noted), ['agent_id' => $to->id]);
+
+    expect(Contact::where('agent_id', $from->id)->where('email', 'noted@example.com')->exists())->toBeTrue();
 });
 
 test('only agents can be assigned and only admins can assign', function () {

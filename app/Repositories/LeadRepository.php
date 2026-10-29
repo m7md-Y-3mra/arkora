@@ -91,10 +91,16 @@ class LeadRepository implements LeadRepositoryInterface
         }
 
         DB::transaction(function () use ($lead, $agent, $actor, $fromAgentId) {
+            $previousContact = $lead->contact;
             $contact = $this->contactFor($agent->id, $lead->email, $lead->name, $lead->phone);
 
             $lead->update(['agent_id' => $agent->id, 'contact_id' => $contact->id]);
             $lead->tasks()->open()->update(['user_id' => $agent->id]);
+
+            // Don't leave the previous agent an empty contact for someone they no longer handle.
+            if ($previousContact && ! $previousContact->notes && ! $previousContact->leads()->exists()) {
+                $previousContact->delete();
+            }
 
             $this->addActivity($lead, $actor, 'assignment', null, [
                 'from_agent_id' => $fromAgentId,
