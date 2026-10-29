@@ -3,6 +3,7 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface UserRepositoryInterface
@@ -16,4 +17,6 @@ interface UserRepositoryInterface
     public function delete(User $user): bool;
 
     public function assignRole(User $user, string $role): User;
+
+    public function activeAgents(): Collection;
 }

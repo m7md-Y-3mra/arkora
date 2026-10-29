@@ -33,7 +33,7 @@ class NewLeadReceived extends Notification
             ->line($this->lead->phone ? "الهاتف: {$this->lead->phone}" : '')
             ->line('الرسالة:')
             ->line($this->lead->message)
-            ->action('عرض طلبات التواصل', route('dashboard.leads.index'))
+            ->action('عرض العميل', route('dashboard.leads.show', $this->lead))
             ->line('شكراً لاستخدامك منصة أركورا.');
     }
 

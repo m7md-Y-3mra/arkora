@@ -53,14 +53,52 @@ export function statusLabel(status: string): string {
     return statusLabels[status] ?? status;
 }
 
+export const LEAD_STAGES = ['new', 'contacted', 'viewing', 'negotiation', 'won', 'lost'] as const;
+
 const leadStatusLabels: Record<string, string> = {
     new: 'جديد',
     contacted: 'تم التواصل',
-    closed: 'مغلق',
+    viewing: 'معاينة',
+    negotiation: 'تفاوض',
+    won: 'تم الإغلاق بنجاح',
+    lost: 'خسارة',
 };
 
 export function leadStatusLabel(status: string): string {
     return leadStatusLabels[status] ?? status;
+}
+
+export const leadStageBadgeClass: Record<string, string> = {
+    new: 'bg-bronze-500/15 text-bronze-700 border-bronze-400',
+    contacted: 'bg-blue-500/10 text-blue-700 border-blue-300',
+    viewing: 'bg-violet-500/10 text-violet-700 border-violet-300',
+    negotiation: 'bg-amber-500/10 text-amber-700 border-amber-300',
+    won: 'bg-emerald-500/10 text-emerald-700 border-emerald-300',
+    lost: 'bg-muted text-muted-foreground border-border',
+};
+
+const activityTypeLabels: Record<string, string> = {
+    note: 'ملاحظة',
+    call: 'مكالمة',
+    email: 'بريد إلكتروني',
+    meeting: 'اجتماع',
+    stage_change: 'تغيير المرحلة',
+    assignment: 'تحويل العميل',
+};
+
+export function activityTypeLabel(type: string): string {
+    return activityTypeLabels[type] ?? type;
+}
+
+const dateTimeFormatter = new Intl.DateTimeFormat('ar-SA', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+});
+
+export function formatDateTime(value: string): string {
+    return dateTimeFormatter.format(new Date(value));
 }
 
 const roleLabels: Record<string, string> = {

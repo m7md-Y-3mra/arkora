@@ -1,9 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PageLinks } from '@/components/dashboard/PageLinks';
+import { LeadStageBadge, LeadStageSelect } from '@/components/crm/LeadStage';
+import { LeadsViewToggle } from '@/components/crm/LeadsViewToggle';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Select,
@@ -12,19 +14,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { leadStatusLabel } from '@/lib/format';
-import type { Lead, LeadStatus, PaginatedResponse } from '@/types/models';
+import { LEAD_STAGES, leadStatusLabel } from '@/lib/format';
+import type { Lead, PaginatedResponse } from '@/types/models';
 
 interface Filters {
     search?: string;
     status?: string;
+    contact_id?: string;
 }
-
-const statusVariant: Record<LeadStatus, string> = {
-    new: 'bg-bronze-500/15 text-bronze-700 border-bronze-400',
-    contacted: 'bg-blue-500/10 text-blue-700 border-blue-300',
-    closed: 'bg-muted text-muted-foreground border-border',
-};
 
 export default function LeadsIndex({
     leads,
@@ -43,13 +40,11 @@ export default function LeadsIndex({
         });
     };
 
-    const updateStatus = (lead: Lead, status: LeadStatus) => {
-        router.patch(route('dashboard.leads.update-status', lead.id), { status }, { preserveScroll: true });
-    };
+    const contactName = filters.contact_id ? leads.data[0]?.contact?.name : null;
 
     return (
-        <DashboardLayout title="طلبات التواصل">
-            <Head title="طلبات التواصل" />
+        <DashboardLayout title="العملاء المحتملون">
+            <Head title="العملاء المحتملون" />
 
             <div className="flex flex-wrap items-center gap-3">
                 <Input
@@ -61,27 +56,44 @@ export default function LeadsIndex({
                 />
                 <Select value={filters.status || 'all'} onValueChange={(v) => updateQuery({ status: v === 'all' ? '' : v })}>
                     <SelectTrigger className="w-44 rounded-none">
-                        <SelectValue placeholder="الحالة" />
+                        <SelectValue placeholder="المرحلة" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">جميع الحالات</SelectItem>
-                        <SelectItem value="new">جديد</SelectItem>
-                        <SelectItem value="contacted">تم التواصل</SelectItem>
-                        <SelectItem value="closed">مغلق</SelectItem>
+                        <SelectItem value="all">جميع المراحل</SelectItem>
+                        {LEAD_STAGES.map((stage) => (
+                            <SelectItem key={stage} value={stage}>
+                                {leadStatusLabel(stage)}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
+                {filters.contact_id && (
+                    <button
+                        onClick={() => updateQuery({ contact_id: '' })}
+                        className="flex items-center gap-1 border border-bronze-400 bg-bronze-500/10 px-3 py-2 text-sm text-bronze-700"
+                    >
+                        جهة الاتصال: {contactName ?? `#${filters.contact_id}`}
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                )}
+                <div className="ms-auto">
+                    <LeadsViewToggle current="list" />
+                </div>
             </div>
 
             <div className="mt-6 space-y-4">
                 {leads.data.map((lead) => (
                     <Card key={lead.id} className="rounded-sm">
                         <CardContent className="flex flex-wrap items-start justify-between gap-4 p-5">
-                            <div className="flex-1">
+                            <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="font-medium text-foreground">{lead.name}</h3>
-                                    <Badge variant="outline" className={`rounded-none ${statusVariant[lead.status]}`}>
-                                        {leadStatusLabel(lead.status)}
-                                    </Badge>
+                                    <Link
+                                        href={route('dashboard.leads.show', lead.id)}
+                                        className="font-medium text-foreground hover:text-bronze-600 hover:underline"
+                                    >
+                                        {lead.name}
+                                    </Link>
+                                    <LeadStageBadge status={lead.status} />
                                 </div>
 
                                 <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -104,19 +116,18 @@ export default function LeadsIndex({
                                     </Link>
                                 )}
 
-                                <p className="mt-3 text-sm leading-6 text-foreground">{lead.message}</p>
+                                <p className="mt-3 line-clamp-3 text-sm leading-6 text-foreground">{lead.message}</p>
                             </div>
 
-                            <Select value={lead.status} onValueChange={(v) => updateStatus(lead, v as LeadStatus)}>
-                                <SelectTrigger className="w-40 rounded-none">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="new">جديد</SelectItem>
-                                    <SelectItem value="contacted">تم التواصل</SelectItem>
-                                    <SelectItem value="closed">مغلق</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <div className="flex flex-col items-end gap-2">
+                                <LeadStageSelect lead={lead} />
+                                <Link
+                                    href={route('dashboard.leads.show', lead.id)}
+                                    className="text-sm text-bronze-600 hover:underline"
+                                >
+                                    عرض التفاصيل ←
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
                 ))}
@@ -126,21 +137,7 @@ export default function LeadsIndex({
                 )}
             </div>
 
-            {leads.last_page > 1 && (
-                <div className="mt-6 flex flex-wrap justify-center gap-2">
-                    {leads.links.map((link, index) => (
-                        <button
-                            key={index}
-                            disabled={!link.url}
-                            onClick={() => link.url && router.visit(link.url, { preserveState: true, preserveScroll: true })}
-                            className={`min-w-10 border px-3 py-2 text-sm ${
-                                link.active ? 'border-onyx-900 bg-onyx-900 text-alabaster' : 'border-border hover:border-onyx-400'
-                            } ${!link.url ? 'cursor-not-allowed opacity-40' : ''}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    ))}
-                </div>
-            )}
+            <PageLinks page={leads} />
         </DashboardLayout>
     );
 }

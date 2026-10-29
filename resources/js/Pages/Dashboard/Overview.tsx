@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Building2, Eye, FileCheck2, MessageSquareText } from 'lucide-react';
+import { AlarmClockOff, Building2, Eye, FileCheck2, MessageSquareText, Target } from 'lucide-react';
 import {
     Bar,
     BarChart,
@@ -14,10 +14,13 @@ import {
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Card, CardContent } from '@/components/ui/card';
+import { LeadStageBadge } from '@/components/crm/LeadStage';
+import { isOverdue } from '@/components/crm/TaskList';
 import { Badge } from '@/components/ui/badge';
-import { formatNumber, formatPrice, leadStatusLabel, propertyTypeLabel, statusLabel } from '@/lib/format';
+import { formatDateTime, formatNumber, formatPrice, leadStatusLabel, propertyTypeLabel, statusLabel } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { PageProps } from '@/types';
-import type { Lead, Property } from '@/types/models';
+import type { Lead, LeadStatus, LeadTask, Property } from '@/types/models';
 
 interface Stats {
     total_properties: number;
@@ -36,6 +39,11 @@ interface TypeCount {
     count: number;
 }
 
+interface StageCount {
+    stage: LeadStatus;
+    count: number;
+}
+
 export default function Overview({
     stats,
     newLeadsCount,
@@ -43,6 +51,10 @@ export default function Overview({
     recentProperties,
     leadsTrend,
     propertyTypeCounts,
+    pipelineCounts,
+    conversionRate,
+    overdueTasksCount,
+    upcomingTasks,
 }: {
     stats: Stats;
     newLeadsCount: number;
@@ -50,6 +62,10 @@ export default function Overview({
     recentProperties: Property[];
     leadsTrend: TrendPoint[];
     propertyTypeCounts: TypeCount[];
+    pipelineCounts: StageCount[];
+    conversionRate: number | null;
+    overdueTasksCount: number;
+    upcomingTasks: LeadTask[];
 }) {
     const { auth } = usePage<PageProps>().props;
     const canManage = auth.roles?.some((r) => r === 'admin' || r === 'agent');
@@ -84,6 +100,11 @@ export default function Overview({
         label: propertyTypeLabel(row.type),
     }));
 
+    const pipelineData = pipelineCounts.map((row) => ({
+        ...row,
+        label: leadStatusLabel(row.stage),
+    }));
+
     return (
         <DashboardLayout title="نظرة عامة">
             <Head title="نظرة عامة" />
@@ -94,6 +115,80 @@ export default function Overview({
                 <StatCard label="إجمالي المشاهدات" value={formatNumber(stats.total_views)} icon={Eye} />
                 <StatCard label="طلبات جديدة" value={formatNumber(newLeadsCount)} icon={MessageSquareText} accent />
             </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-3">
+                <Card className="rounded-sm lg:col-span-2">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="font-heading text-xl text-foreground">العملاء حسب المرحلة</h2>
+                            <Link href={route('dashboard.leads.board')} className="text-sm text-bronze-600 hover:underline">
+                                لوحة المراحل
+                            </Link>
+                        </div>
+                        <div className="mt-4 h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={pipelineData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="label" fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <YAxis allowDecimals={false} fontSize={12} stroke="hsl(var(--muted-foreground))" />
+                                    <Tooltip
+                                        contentStyle={{ fontSize: 12, borderRadius: 0, direction: 'rtl' }}
+                                        formatter={(value) => [value, 'عميل']}
+                                    />
+                                    <Bar dataKey="count" fill="#B59A7A" radius={0} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid gap-6">
+                    <StatCard
+                        label="نسبة التحويل (فوز من المغلق)"
+                        value={conversionRate === null ? '—' : `${formatNumber(conversionRate)}٪`}
+                        icon={Target}
+                    />
+                    <Link href={route('dashboard.tasks.index', { bucket: 'overdue' })}>
+                        <StatCard
+                            label="مهام متأخرة"
+                            value={formatNumber(overdueTasksCount)}
+                            icon={AlarmClockOff}
+                            accent={overdueTasksCount > 0}
+                        />
+                    </Link>
+                </div>
+            </div>
+
+            <Card className="mt-8 rounded-sm">
+                <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-heading text-xl text-foreground">المهام القادمة</h2>
+                        <Link href={route('dashboard.tasks.index')} className="text-sm text-bronze-600 hover:underline">
+                            كل المهام
+                        </Link>
+                    </div>
+                    <div className="mt-4">
+                        {upcomingTasks.map((task) => (
+                            <Link
+                                key={task.id}
+                                href={route('dashboard.leads.show', task.lead_id)}
+                                className="flex items-center justify-between gap-3 border-b border-border py-3 last:border-0 hover:bg-muted/40"
+                            >
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+                                    <p className="text-xs text-muted-foreground">{task.lead?.name}</p>
+                                </div>
+                                <span className={cn('shrink-0 text-xs text-muted-foreground', isOverdue(task) && 'font-medium text-destructive')}>
+                                    {formatDateTime(task.due_at)}
+                                </span>
+                            </Link>
+                        ))}
+                        {upcomingTasks.length === 0 && (
+                            <p className="py-6 text-center text-sm text-muted-foreground">لا توجد مهام مفتوحة.</p>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
                 <Card className="rounded-sm">
@@ -176,13 +271,17 @@ export default function Overview({
 
                         <div className="mt-4 space-y-4">
                             {recentLeads.map((lead) => (
-                                <div key={lead.id} className="flex items-center justify-between border-b border-border pb-3 last:border-0">
+                                <Link
+                                    key={lead.id}
+                                    href={route('dashboard.leads.show', lead.id)}
+                                    className="flex items-center justify-between border-b border-border pb-3 last:border-0"
+                                >
                                     <div>
                                         <p className="font-medium text-foreground">{lead.name}</p>
                                         <p className="text-sm text-muted-foreground">{lead.email}</p>
                                     </div>
-                                    <Badge variant="outline" className="rounded-none">{leadStatusLabel(lead.status)}</Badge>
-                                </div>
+                                    <LeadStageBadge status={lead.status} />
+                                </Link>
                             ))}
                             {recentLeads.length === 0 && (
                                 <p className="py-6 text-center text-sm text-muted-foreground">لا توجد طلبات بعد.</p>

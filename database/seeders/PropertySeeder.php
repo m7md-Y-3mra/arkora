@@ -6,6 +6,7 @@ use App\Models\Amenity;
 use App\Models\Lead;
 use App\Models\Property;
 use App\Models\User;
+use App\Repositories\Contracts\LeadRepositoryInterface;
 use Illuminate\Database\Seeder;
 
 class PropertySeeder extends Seeder
@@ -63,6 +64,7 @@ class PropertySeeder extends Seeder
             });
 
         $publishedProperties = Property::where('status', 'published')->get();
+        $leads = app(LeadRepositoryInterface::class);
 
         foreach ($clients as $client) {
             $leadCount = fake()->numberBetween(1, 3);
@@ -70,7 +72,8 @@ class PropertySeeder extends Seeder
             for ($i = 0; $i < $leadCount; $i++) {
                 $property = $publishedProperties->random();
 
-                Lead::factory()->create([
+                $leads->create([
+                    ...Lead::factory()->raw(),
                     'property_id' => $property->id,
                     'agent_id' => $property->agent_id,
                     'name' => $client->name,

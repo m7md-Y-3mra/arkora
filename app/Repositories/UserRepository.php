@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 
@@ -60,5 +61,14 @@ class UserRepository implements UserRepositoryInterface
         $user->syncRoles([$role]);
 
         return $user->refresh();
+    }
+
+    public function activeAgents(): Collection
+    {
+        return $this->model->query()
+            ->role('agent')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }
