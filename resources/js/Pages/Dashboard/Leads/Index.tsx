@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Mail, Phone, X } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PageLinks } from '@/components/dashboard/PageLinks';
+import { Pagination } from '@/components/common/Pagination';
 import { LeadStageBadge, LeadStageSelect } from '@/components/crm/LeadStage';
 import { LeadsViewToggle } from '@/components/crm/LeadsViewToggle';
 import { Input } from '@/components/ui/input';
@@ -137,7 +137,7 @@ export default function LeadsIndex({
                 )}
             </div>
 
-            <PageLinks page={leads} />
+            <Pagination page={leads} />
         </DashboardLayout>
     );
 }

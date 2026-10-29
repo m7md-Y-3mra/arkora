@@ -39,7 +39,9 @@ interface PropertyRepositoryInterface
 
     public function countsByType(?int $agentId): array;
 
-    public function agentsWithListings(): Collection;
+    public function paginateAgents(array $filters, int $perPage = 12): LengthAwarePaginator;
+
+    public function publishedCities(): array;
 
     public function findAgentProfile(int $agentId): ?User;
 

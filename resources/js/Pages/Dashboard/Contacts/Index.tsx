@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { PageLinks } from '@/components/dashboard/PageLinks';
+import { Pagination } from '@/components/common/Pagination';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -83,7 +83,7 @@ export default function ContactsIndex({
                 </Table>
             </Card>
 
-            <PageLinks page={contacts} />
+            <Pagination page={contacts} />
         </DashboardLayout>
     );
 }

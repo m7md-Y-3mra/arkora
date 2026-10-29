@@ -13,10 +13,14 @@ class AgentDirectoryController extends Controller
     {
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = $request->only(['search', 'city', 'min_experience', 'sort']);
+
         return Inertia::render('Public/Agents', [
-            'agents' => $this->properties->agentsWithListings(),
+            'agents' => $this->properties->paginateAgents(array_filter($filters), 12),
+            'filters' => $filters,
+            'cities' => $this->properties->publishedCities(),
         ]);
     }
 
