@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\AgentDirectoryController;
+use App\Http\Controllers\Dashboard\ContactController as DashboardContactController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\LeadActivityController as DashboardLeadActivityController;
 use App\Http\Controllers\Dashboard\LeadController as DashboardLeadController;
+use App\Http\Controllers\Dashboard\LeadTaskController as DashboardLeadTaskController;
 use App\Http\Controllers\Dashboard\PropertyController as DashboardPropertyController;
 use App\Http\Controllers\Dashboard\UserController as DashboardUserController;
 use App\Http\Controllers\FavoriteController;
@@ -48,7 +51,20 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->name('dashboard.')
         Route::post('/properties/bulk-action', [DashboardPropertyController::class, 'bulkAction'])->name('properties.bulk-action');
 
         Route::get('/leads', [DashboardLeadController::class, 'index'])->name('leads.index');
+        Route::get('/leads/board', [DashboardLeadController::class, 'board'])->name('leads.board');
+        Route::get('/leads/{lead}', [DashboardLeadController::class, 'show'])->name('leads.show');
         Route::patch('/leads/{lead}/status', [DashboardLeadController::class, 'updateStatus'])->name('leads.update-status');
+        Route::patch('/leads/{lead}/assign', [DashboardLeadController::class, 'assign'])->name('leads.assign');
+        Route::post('/leads/{lead}/activities', [DashboardLeadActivityController::class, 'store'])->name('leads.activities.store');
+        Route::post('/leads/{lead}/tasks', [DashboardLeadTaskController::class, 'store'])->name('leads.tasks.store');
+
+        Route::get('/tasks', [DashboardLeadTaskController::class, 'index'])->name('tasks.index');
+        Route::patch('/tasks/{task}/toggle', [DashboardLeadTaskController::class, 'toggle'])->name('tasks.toggle');
+        Route::delete('/tasks/{task}', [DashboardLeadTaskController::class, 'destroy'])->name('tasks.destroy');
+
+        Route::get('/contacts', [DashboardContactController::class, 'index'])->name('contacts.index');
+        Route::get('/contacts/{contact}', [DashboardContactController::class, 'show'])->name('contacts.show');
+        Route::put('/contacts/{contact}', [DashboardContactController::class, 'update'])->name('contacts.update');
     });
 
     Route::middleware('role:admin')->group(function () {

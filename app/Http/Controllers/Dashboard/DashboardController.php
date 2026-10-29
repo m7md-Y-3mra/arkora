@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\Contracts\LeadRepositoryInterface;
+use App\Repositories\Contracts\LeadTaskRepositoryInterface;
 use App\Repositories\Contracts\PropertyRepositoryInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,6 +15,7 @@ class DashboardController extends Controller
     public function __construct(
         private PropertyRepositoryInterface $properties,
         private LeadRepositoryInterface $leads,
+        private LeadTaskRepositoryInterface $tasks,
     ) {
     }
 
@@ -29,6 +31,10 @@ class DashboardController extends Controller
             'recentProperties' => $this->properties->paginateForDashboard($agentId, [], 5)->items(),
             'leadsTrend' => $this->leads->trendLast14Days($agentId),
             'propertyTypeCounts' => $this->properties->countsByType($agentId),
+            'pipelineCounts' => $this->leads->countsByStage($agentId),
+            'conversionRate' => $this->leads->conversionRate($agentId),
+            'overdueTasksCount' => $this->tasks->countOverdue($agentId),
+            'upcomingTasks' => $this->tasks->upcoming($agentId),
         ]);
     }
 }
